@@ -293,7 +293,7 @@ export function Transcribe() {
       const response = await fetch('http://localhost:4000/api/transcribe/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'token': `Bearer ${token}`
         },
         body: formData,
       })
@@ -303,6 +303,8 @@ export function Transcribe() {
         setTranscriptText(data.transcript)
         setSummaryQuizData(data.summaryQuiz)
         resetQuiz()
+        console.log(data.transcribe)
+        console.log(data.summaryQuiz)
       }
     } catch (error) {
       console.error('Error transcribing uploaded video:', error)
