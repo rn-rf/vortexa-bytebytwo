@@ -6,6 +6,7 @@ const axios = require("axios");
 const playdl = require('play-dl');
 const ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
 const ASSEMBLYAI_BASE = "https://api.assemblyai.com/v2";
+const {getUserIdFromToken} = require("../utilities/utils");
 // Polyfill fetch, Headers, Request, and Response for Node < 18
 const fetch = require("node-fetch");
 global.fetch = fetch;
@@ -13,6 +14,10 @@ global.Headers = fetch.Headers;
 global.Request = fetch.Request;
 global.Response = fetch.Response;
 const { FormData, File } = require("formdata-node");
+
+//models
+const Transcript = require("../models/transcribeModel");
+const User = require("../models/userModel");
 
 // Polyfill globals for OpenAI SDK
 globalThis.FormData = FormData;
@@ -207,6 +212,175 @@ async function uploadVideo(req, res) {
   }
 }
 
+
+async function uploadVideoWithId(req, res) {
+  try {
+    const inputPath = req.file.path;
+    const outputPath = path.join("uploads", `${Date.now()}.mp3`);
+
+    const token = req.headers.token; // usually sent as Bearer <token>
+    const userId = getUserIdFromToken(token);
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized", success: false });
+    }
+
+
+    await videoToAudio(inputPath, outputPath);
+    const audioUrl = await uploadToAssemblyAI(outputPath);
+    const transcriptId = await requestTranscription(audioUrl);
+    const transcript = await pollTranscription(transcriptId);
+
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
+
+    const geminiResult = await generateSummaryAndQuiz(transcript.text);
+
+    if (!geminiResult) {
+      return res.status(500).json({ error: "Failed to generate summary and quiz from LLM." });
+    }
+
+    const newDoc = await Transcript.create({
+      transcript: transcript.text,
+      summaryQuiz: geminiResult,
+      isSaved: false, // you can set default as true
+    });
+
+
+    res.json({ 
+      transcript: transcript.text, 
+      summaryQuiz: geminiResult,
+      uid: newDoc.uid, // or newDoc._id if you prefer
+      success: true
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+async function markAsSaved(req, res) {
+  try {
+    const { uid } = req.params;
+
+    if (!uid) {
+      return res.status(400).json({ message: "Missing transcript ID" });
+    }
+
+    // Find the document and update its isSaved field to true
+    const updatedDoc = await Transcript.findOneAndUpdate(
+      { uid },           // filter by uid
+      { isSaved: true }, // update
+      { new: true }      // return the updated document
+    );
+
+    if (!updatedDoc) {
+      return res.status(404).json({ message: "Transcript not found" });
+    }
+
+    res.json({ message: "Transcript marked as saved", transcript: updatedDoc });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+}
+
+async function getUserTranscripts(req, res) {
+  try {
+    const token = req.headers.token; // usually sent as Bearer <token>
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized, missing token" });
+    }
+
+    const userId = getUserIdFromToken(token);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized, invalid token" });
+    }
+
+    // Fetch all transcripts for this user
+    const transcripts = await Transcript.find({ userId }).sort({ createdAt: -1 });
+
+    res.json({ success: true, transcripts });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+}
+
+async function getSavedTranscripts(req, res) {
+  try {
+    const token = req.headers.token; // usually sent as Bearer <token>
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized, missing token" });
+    }
+
+    const userId = getUserIdFromToken(token);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized, invalid token" });
+    }
+
+    // Fetch all transcripts that are saved for this user
+    const savedTranscripts = await Transcript.find({ userId, isSaved: true }).sort({ createdAt: -1 });
+
+    res.json({ success: true, savedTranscripts });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+}
+
+
+async function updateUserScore(req, res) {
+  try {
+    const token = req.headers.token;
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized, missing token" });
+    }
+
+    const userId = getUserIdFromToken(token);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized, invalid token" });
+    }
+
+    const { score } = req.body; // latest quiz score (e.g., 0-100)
+    if (score == null || isNaN(score)) {
+      return res.status(400).json({ message: "Invalid score provided" });
+    }
+
+    // Fetch user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Initialize fields if not present
+    if (!user.totalQuizzes) user.totalQuizzes = 0;
+    if (!user.averageScore) user.averageScore = 0;
+
+    // Calculate new average
+    const newTotalQuizzes = user.totalQuizzes + 1;
+    const newAverageScore = ((user.averageScore * user.totalQuizzes) + score) / newTotalQuizzes;
+
+    // Update user
+    user.totalQuizzes = newTotalQuizzes;
+    user.averageScore = newAverageScore;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "User score updated",
+      totalQuizzes: user.totalQuizzes,
+      averageScore: user.averageScore.toFixed(2)
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+}
+
+
 async function transcribeYoutube(req, res) {
   try {
     const { url } = req.body;
@@ -245,4 +419,9 @@ module.exports = {
   upload,
   uploadVideo,
   transcribeYoutube,
+  uploadVideoWithId,
+  markAsSaved,
+  getUserTranscripts,
+  getSavedTranscripts,
+  updateUserScore
 };
