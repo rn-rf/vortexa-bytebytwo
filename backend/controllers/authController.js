@@ -21,7 +21,7 @@ const signUp = async (req, res) => {
 
         await userModel.save();
 
-        await sendEmail(userModel, "Registered Successfully", `Congratulations ${name} you have been registered to our site successfully with email id ${email}`);
+        //await sendEmail(userModel, "Registered Successfully", `Congratulations ${name} you have been registered to our site successfully with email id ${email}`);
 
         res.status(201).json({
             message : "User registered successfully",
@@ -69,7 +69,7 @@ const login = async (req, res) => {
             { expiresIn : '24h'}
         );
         
-        await sendEmail(user, "Login Successfull", `Congratulations ${user.name} you have been logged to our site successfully with email id ${email}`);
+        //await sendEmail(user, "Login Successfull", `Congratulations ${user.name} you have been logged to our site successfully with email id ${email}`);
 
         res.status(201).json({
             message : "Login Successful",

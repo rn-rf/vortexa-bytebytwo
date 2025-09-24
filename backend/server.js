@@ -6,6 +6,7 @@ const cors = require('cors');
 //routers of all modules 
 const authRouter = require('./routes/authRoutes')
 const homeRouter = require('./routes/homeRoutes')
+const transcribeRouter = require('./routes/transcribeRoutes')
 
 const app = express();
 const PORT = process.env.PORT;
@@ -15,6 +16,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRouter);
 app.use('/api/home', homeRouter);
+app.use('/api/transcribe', transcribeRouter);
 
 
 //connect to mongo db
