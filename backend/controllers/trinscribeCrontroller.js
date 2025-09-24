@@ -292,7 +292,9 @@ async function getUserTranscripts(req, res) {
       return res.status(401).json({ message: "Unauthorized, missing token" });
     }
 
+    console.log(token)
     const userId = getUserIdFromToken(token);
+    console.log(userId);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized, invalid token" });
     }

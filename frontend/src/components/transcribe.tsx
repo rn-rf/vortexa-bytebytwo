@@ -263,7 +263,7 @@ export function Transcribe() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'token': `Bearer ${token}`
         },
         body: JSON.stringify({ url: youtubeLink }),
       })
@@ -290,7 +290,7 @@ export function Transcribe() {
     
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:4000/api/transcribe/upload', {
+      const response = await fetch('http://localhost:4000/api/transcribe/uploadWithId', {
         method: 'POST',
         headers: {
           'token': `Bearer ${token}`
@@ -319,6 +319,24 @@ export function Transcribe() {
     setSelectedAnswers({})
     setQuizCompleted(false)
     setScore(0)
+  }
+
+  const submitQuize = async () => {
+    const token = localStorage.getItem('token')
+  const response = await fetch('http://localhost:4000/api/transcribe/updateScore', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json', // important!
+      'token': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      score: score, // convert object to JSON string
+    }),
+  })
+
+  const data = await response.json()
+  console.log(score)
+  console.log(score)
   }
 
   const handleStartQuiz = () => {
@@ -416,7 +434,7 @@ export function Transcribe() {
                   <Button onClick={() => setShowQuiz(false)}>
                     Back to Transcript
                   </Button>
-                  <Button onClick={handleStartQuiz} variant="outline">
+                  <Button onClick={resetQuiz} variant="outline">
                     Retry Quiz
                   </Button>
                 </div>
@@ -487,7 +505,7 @@ export function Transcribe() {
                 Previous
               </Button>
               <Button 
-                onClick={handleNextQuestion}
+                onClick={summaryQuizData.questions.length - 1 ? handleNextQuestion : completeQuiz}
                 disabled={!selectedAnswers[currentQuestion]}
               >
                 {currentQuestion === summaryQuizData.questions.length - 1 ? 'Complete Quiz' : 'Next'}

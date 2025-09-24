@@ -1,54 +1,74 @@
-// History.jsx - New History Component
-import { useState } from "react"
+// History.jsx
+import { useEffect, useState } from "react"
 import { Search, Download, Trash2, Calendar, Clock, FileText } from "lucide-react"
 
 export const History = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
+  const [historyItems, setHistoryItems] = useState([])
 
-  // Sample history data - replace with your actual data
-  const [historyItems] = useState([
-    {
-      id: 1,
-      title: "Meeting Recording - Q4 Planning",
-      date: "2024-01-15",
-      time: "14:30",
-      duration: "45m",
-      type: "video",
-      status: "completed",
-      transcriptLength: "2,340 words"
-    },
-    {
-      id: 2,
-      title: "Interview with John Smith",
-      date: "2024-01-14",
-      time: "10:15",
-      duration: "30m",
-      type: "audio",
-      status: "completed",
-      transcriptLength: "1,850 words"
-    },
-    {
-      id: 3,
-      title: "Product Demo Recording",
-      date: "2024-01-12",
-      time: "16:00",
-      duration: "20m",
-      type: "video",
-      status: "processing",
-      transcriptLength: null
-    },
-    {
-      id: 4,
-      title: "Customer Feedback Call",
-      date: "2024-01-10",
-      time: "11:30",
-      duration: "25m",
-      type: "audio",
-      status: "completed",
-      transcriptLength: "1,200 words"
+  useEffect(() => {
+    const fetchHistory = async () => {
+  
+  try {
+    const token = localStorage.getItem('token')
+    console.log(token)
+    if (!token) throw new Error("No auth token found")
+
+    const response = await fetch('http://localhost:4000/api/transcribe/getAllTranscripts', {
+      method: 'GET',
+      headers: {
+        'token': `Bearer ${token}`
+      }
+    })
+
+    // First get response text for safe parsing
+    const text = await response.text()
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch (err) {
+      console.error("Failed to parse JSON response:", text)
+      throw new Error("Invalid JSON response from server")
     }
-  ])
+
+    if (!data.success) {
+      console.error("Server returned error:", data.message)
+      return
+    }
+
+    // Map backend data to frontend format
+    const formattedItems = data.transcripts.map((t, index) => {
+      const createdAt = new Date(t.createdAt)
+      return {
+        // id: t._id || index,
+        title: `Transcript - ${createdAt.toLocaleDateString()}`,
+        date: createdAt.toLocaleDateString(),
+        time: createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        // duration: "N/A", // can extend later if needed
+        // type: "audio/video", // can extend if you store type
+        status: "completed", // if transcript exists, assume completed
+        transcriptLength: t.transcript ? `${t.transcript.split(" ").length} words` : null,
+        transcript: t.transcript,
+        summary: t.summaryQuiz?.summary || "",
+        // questions: t.summaryQuiz?.questions || [],
+        // recommendations: t.summaryQuiz?.recommendations || [],
+        // isSaved: t.isSaved
+      }
+    })
+
+    if(formattedItems.length == 0){
+      setHistoryItems([ { id: 1, title: "Meeting Recording - Q4 Planning", date: "2024-01-15", time: "14:30", duration: "45m", type: "video", status: "completed", transcriptLength: "2,340 words" }, { id: 2, title: "Interview with John Smith", date: "2024-01-14", time: "10:15", duration: "30m", type: "audio", status: "completed", transcriptLength: "1,850 words" }, { id: 3, title: "Product Demo Recording", date: "2024-01-12", time: "16:00", duration: "20m", type: "video", status: "processing", transcriptLength: null }, { id: 4, title: "Customer Feedback Call", date: "2024-01-10", time: "11:30", duration: "25m", type: "audio", status: "completed", transcriptLength: "1,200 words" } ])
+    }else {
+      setHistoryItems(formattedItems)
+    }
+    console.log(formattedItems)
+  } catch (error) {
+    console.error("Error fetching history:", error)
+  } 
+}
+    fetchHistory()
+  }, [])
 
   const filteredItems = historyItems.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -57,13 +77,18 @@ export const History = () => {
   })
 
   const handleDownload = (item) => {
-    console.log("Downloading transcript for:", item.title)
-    // Add your download logic here
+    const blob = new Blob([item.transcriptLength], { type: "text/plain" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${item.title}.txt`
+    a.click()
+    window.URL.revokeObjectURL(url)
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     console.log("Deleting item:", id)
-    // Add your delete logic here
+    // Call your backend delete route here
   }
 
   return (
@@ -149,6 +174,35 @@ export const History = () => {
                     <p className="text-sm text-muted-foreground">
                       Transcript: {item.transcriptLength}
                     </p>
+                  )}
+
+                  {/* Extra: show summary, questions, recommendations */}
+                  {item.summary && (
+                    <p className="text-sm mt-2"><strong>Summary:</strong> {item.summary}</p>
+                  )}
+                  {item.questions?.length > 0 && (
+                    <div className="mt-2 text-sm">
+                      <strong>Questions:</strong>
+                      <ul className="list-disc pl-5">
+                        {item.questions.map((q, i) => (
+                          <li key={i}>{q.question}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {item.recommendations?.length > 0 && (
+                    <div className="mt-2 text-sm">
+                      <strong>Recommendations:</strong>
+                      <ul className="list-disc pl-5">
+                        {item.recommendations.map((r, i) => (
+                          <li key={i}>
+                            <a href={r.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                              {r.topic}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
 

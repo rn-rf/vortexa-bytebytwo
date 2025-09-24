@@ -2,6 +2,7 @@ const sgMail = require('@sendgrid/mail')
 const PDFDocument = require('pdfkit');
 const getStream = require('get-stream');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+const jwt = require("jsonwebtoken"); 
 
 async function generateReceiptPDF(data) {
     const doc = new PDFDocument();
@@ -54,21 +55,26 @@ const sendEmail = async (user, subject, message) => {
 }
 
 const getUserIdFromToken = (token) => {
-    try {
-        if (!token) return null;
+  try {
+    console.log("Token received:", token);
 
-        // Remove "Bearer " prefix if present
-        if (token.startsWith("Bearer ")) {
-            token = token.slice(7, token.length);
-        }
+    if (!token) return null;
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        return decoded.id;
-    } catch (error) {
-        console.error("Invalid token:", error.message);
-        return null;
+    if (token.startsWith("Bearer ")) {
+      token = token.slice(7);
+      console.log("Token after slicing Bearer:", token);
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    console.log("Decoded JWT:", decoded);
+
+    return decoded.id;
+  } catch (error) {
+    console.error("Invalid token:", error.message);
+    return null;
+  }
 };
+
 
 module.exports = {
     sendEmail,

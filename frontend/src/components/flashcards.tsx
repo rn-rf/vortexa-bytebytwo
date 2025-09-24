@@ -1,438 +1,314 @@
-/**
- * FLASHCARDS COMPONENT
- * 
- * Features:
- * - Create, edit, and delete flashcards (question/answer pairs)
- * - Interactive flip cards (click to reveal question/answer)
- * - Study Mode - full-screen flashcard review with navigation
- * - Search functionality across questions and answers
- * - Progress indicators and card navigation in study mode
- * 
- * Backend API Endpoints Required:
- * - GET    /api/flashcards         // Get all flashcards
- * - POST   /api/flashcards         // Create flashcard { question, answer }
- * - PUT    /api/flashcards/:id     // Update flashcard { question, answer }
- * - DELETE /api/flashcards/:id     // Delete flashcard
- */
-
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Search, Edit2, Trash2, Save, X, RotateCcw, Play, ChevronLeft, ChevronRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { RotateCcw, ExternalLink } from "lucide-react"
 
 export function Flashcards() {
-  const [flashcards, setFlashcards] = useState([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [isCreating, setIsCreating] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [newFlashcard, setNewFlashcard] = useState({ question: "", answer: "" })
-  const [isLoading, setIsLoading] = useState(false)
-  const [studyMode, setStudyMode] = useState(false)
-  const [currentCardIndex, setCurrentCardIndex] = useState(0)
-  const [showAnswer, setShowAnswer] = useState(false)
-
-  useEffect(() => {
-    fetchFlashcards()
-  }, [])
-
-  const fetchFlashcards = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('http://localhost:4000/api/flashcards')
-      const data = await response.json()
-      if (data.flashcards) {
-        setFlashcards(data.flashcards)
+  // Sample data matching your structure
+  const [data] = useState({
+    summary: "A conflict of interest occurs when an individual's personal interests clash with the interests of another person or organization to whom they owe a duty of loyalty. This can manifest as benefiting oneself at the expense of an employer or facing conflicting obligations to different parties. In business and law, a fiduciary responsibility creates a duty of loyalty. Ethical individuals should actively avoid situations where personal gain leads to disloyalty towards others, which can be a tough balancing act.",
+    questions: [
+      {
+        question: "What is a conflict of interest?",
+        options: [
+          "When a person's best interest clashes with the interest of someone they owe loyalty to.",
+          "When two people disagree on a topic.",
+          "When someone changes their mind about something.",
+          "When a person has too many responsibilities."
+        ],
+        answer: "When a person's best interest clashes with the interest of someone they owe loyalty to."
+      },
+      {
+        question: "What is a duty of loyalty?",
+        options: [
+          "A legal obligation to act in the best interest of another party.",
+          "The freedom to act in one's own self-interest.",
+          "An obligation to harm another party.",
+          "A voluntary agreement with no legal standing."
+        ],
+        answer: "A legal obligation to act in the best interest of another party."
+      },
+      {
+        question: "Who do auditors owe a duty of loyalty to?",
+        options: [
+          "The investors who rely on the financial reports.",
+          "The company being audited.",
+          "Their own auditing firm.",
+          "Government regulators only."
+        ],
+        answer: "The investors who rely on the financial reports."
+      },
+      {
+        question: "What is an example of a conflict of interest involving an employee?",
+        options: [
+          "An employee taking a bribe to purchase inferior goods for their company.",
+          "An employee working overtime without pay.",
+          "An employee taking vacation time.",
+          "An employee asking for a promotion."
+        ],
+        answer: "An employee taking a bribe to purchase inferior goods for their company."
+      },
+      {
+        question: "What should ethical people do to avoid conflicts of interest?",
+        options: [
+          "Consciously avoid situations where they benefit themselves by being disloyal to others.",
+          "Always prioritize their own interests first.",
+          "Ignore potential conflicts and hope for the best.",
+          "Only work for themselves to avoid loyalty issues."
+        ],
+        answer: "Consciously avoid situations where they benefit themselves by being disloyal to others."
+      },
+      {
+        question: "What creates a duty of loyalty in business and law?",
+        options: [
+          "A fiduciary responsibility.",
+          "A casual agreement.",
+          "Personal friendship.",
+          "Government mandate only."
+        ],
+        answer: "A fiduciary responsibility."
+      },
+      {
+        question: "What is the main challenge in avoiding conflicts of interest?",
+        options: [
+          "Balancing personal gain with loyalty to others.",
+          "Understanding complex legal terms.",
+          "Finding enough time in the day.",
+          "Communicating with stakeholders."
+        ],
+        answer: "Balancing personal gain with loyalty to others."
+      },
+      {
+        question: "When can conflicts of interest manifest?",
+        options: [
+          "When benefiting oneself at the expense of an employer.",
+          "When working extra hours.",
+          "When following company policy.",
+          "When taking lunch breaks."
+        ],
+        answer: "When benefiting oneself at the expense of an employer."
+      },
+      {
+        question: "What type of obligations can create conflicts of interest?",
+        options: [
+          "Conflicting obligations to different parties.",
+          "Single obligations to one party.",
+          "Voluntary community service.",
+          "Personal hobby commitments."
+        ],
+        answer: "Conflicting obligations to different parties."
+      },
+      {
+        question: "Who is most affected by conflicts of interest in business?",
+        options: [
+          "Those who are owed loyalty by the conflicted party.",
+          "The conflicted party themselves.",
+          "Government officials.",
+          "Competitors in the market."
+        ],
+        answer: "Those who are owed loyalty by the conflicted party."
+      },
+      {
+        question: "What is required for ethical behavior regarding conflicts?",
+        options: [
+          "Active avoidance of conflicting situations.",
+          "Passive awareness only.",
+          "Legal consultation for every decision.",
+          "Complete isolation from business dealings."
+        ],
+        answer: "Active avoidance of conflicting situations."
+      },
+      {
+        question: "In what fields are conflicts of interest particularly important?",
+        options: [
+          "Business and law.",
+          "Sports and entertainment.",
+          "Art and music.",
+          "Tourism and hospitality."
+        ],
+        answer: "Business and law."
+      },
+      {
+        question: "What makes conflicts of interest ethically problematic?",
+        options: [
+          "They involve disloyalty to parties who deserve loyalty.",
+          "They are always illegal.",
+          "They require too much paperwork.",
+          "They are time-consuming to resolve."
+        ],
+        answer: "They involve disloyalty to parties who deserve loyalty."
+      },
+      {
+        question: "What is the relationship between personal interests and conflicts?",
+        options: [
+          "Personal interests can clash with duties to others.",
+          "Personal interests are always more important.",
+          "Personal interests never affect professional duties.",
+          "Personal interests should be ignored completely."
+        ],
+        answer: "Personal interests can clash with duties to others."
+      },
+      {
+        question: "How should organizations handle conflicts of interest?",
+        options: [
+          "Establish clear policies and disclosure requirements.",
+          "Ignore them unless they become public.",
+          "Leave it up to individual judgment only.",
+          "Ban all personal interests of employees."
+        ],
+        answer: "Establish clear policies and disclosure requirements."
+      },
+      {
+        question: "What is the ultimate goal of managing conflicts of interest?",
+        options: [
+          "Maintaining trust and integrity in professional relationships.",
+          "Maximizing profits for the organization.",
+          "Avoiding all legal liability.",
+          "Simplifying decision-making processes."
+        ],
+        answer: "Maintaining trust and integrity in professional relationships."
       }
-    } catch (error) {
-      console.error('Error fetching flashcards:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const createFlashcard = async () => {
-    if (!newFlashcard.question.trim() || !newFlashcard.answer.trim()) return
-    
-    setIsLoading(true)
-    try {
-      const response = await fetch('http://localhost:4000/api/flashcards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: newFlashcard.question,
-          answer: newFlashcard.answer
-        }),
-      })
-      
-      const data = await response.json()
-      if (data.flashcard) {
-        setFlashcards([data.flashcard, ...flashcards])
-        setNewFlashcard({ question: "", answer: "" })
-        setIsCreating(false)
+    ],
+    recommendations: [
+      {
+        topic: "Ethics in Business",
+        link: "https://www.scu.edu/ethics/focus-areas/business-ethics/"
+      },
+      {
+        topic: "Fiduciary Duty",
+        link: "https://www.investopedia.com/terms/f/fiduciary.asp"
+      },
+      {
+        topic: "Corporate Governance",
+        link: "https://corpgov.law.harvard.edu/"
       }
-    } catch (error) {
-      console.error('Error creating flashcard:', error)
-    } finally {
-      setIsLoading(false)
+    ]
+  })
+
+  const [flippedCards, setFlippedCards] = useState(new Set())
+
+  const flipCard = (index) => {
+    const newFlipped = new Set(flippedCards)
+    if (newFlipped.has(index)) {
+      newFlipped.delete(index)
+    } else {
+      newFlipped.add(index)
     }
+    setFlippedCards(newFlipped)
   }
 
-  const updateFlashcard = async (id, updatedFlashcard) => {
-    setIsLoading(true)
-    try {
-      const response = await fetch(`http://localhost:4000/api/flashcards/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedFlashcard),
-      })
-      
-      const data = await response.json()
-      if (data.flashcard) {
-        setFlashcards(flashcards.map(card => card.id === id ? data.flashcard : card))
-        setEditingId(null)
-      }
-    } catch (error) {
-      console.error('Error updating flashcard:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const deleteFlashcard = async (id) => {
-    if (!confirm('Are you sure you want to delete this flashcard?')) return
-    
-    setIsLoading(true)
-    try {
-      await fetch(`http://localhost:4000/api/flashcards/${id}`, {
-        method: 'DELETE',
-      })
-      
-      setFlashcards(flashcards.filter(card => card.id !== id))
-    } catch (error) {
-      console.error('Error deleting flashcard:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const startStudyMode = () => {
-    if (filteredFlashcards.length === 0) return
-    setStudyMode(true)
-    setCurrentCardIndex(0)
-    setShowAnswer(false)
-  }
-
-  const exitStudyMode = () => {
-    setStudyMode(false)
-    setCurrentCardIndex(0)
-    setShowAnswer(false)
-  }
-
-  const nextCard = () => {
-    if (currentCardIndex < filteredFlashcards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
-      setShowAnswer(false)
-    }
-  }
-
-  const prevCard = () => {
-    if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1)
-      setShowAnswer(false)
-    }
-  }
-
-  const filteredFlashcards = flashcards.filter(card =>
-    card.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    card.answer.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  if (studyMode) {
-    const currentCard = filteredFlashcards[currentCardIndex]
-    
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Study Mode</h1>
-            <p className="text-muted-foreground">
-              Card {currentCardIndex + 1} of {filteredFlashcards.length}
-            </p>
-          </div>
-          <Button variant="outline" onClick={exitStudyMode}>
-            <X className="w-4 h-4 mr-2" />
-            Exit Study
-          </Button>
-        </div>
-
-        <Card className="min-h-[400px]">
-          <CardContent className="p-8 flex flex-col justify-center items-center text-center space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-muted-foreground">
-                {showAnswer ? "Answer" : "Question"}
-              </h3>
-              <div className="text-2xl font-medium">
-                {showAnswer ? currentCard.answer : currentCard.question}
-              </div>
-            </div>
-            
-            <Button 
-              onClick={() => setShowAnswer(!showAnswer)}
-              className="mt-6"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              {showAnswer ? "Show Question" : "Show Answer"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-between items-center">
-          <Button 
-            variant="outline" 
-            onClick={prevCard} 
-            disabled={currentCardIndex === 0}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Previous
-          </Button>
-          
-          <div className="flex gap-1">
-            {filteredFlashcards.map((_, index) => (
-              <div
-                key={index}
-                className={`w-2 h-2 rounded-full ${
-                  index === currentCardIndex ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-            ))}
-          </div>
-          
-          <Button 
-            variant="outline" 
-            onClick={nextCard} 
-            disabled={currentCardIndex === filteredFlashcards.length - 1}
-          >
-            Next
-            <ChevronRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
-      </div>
-    )
+  const resetAll = () => {
+    setFlippedCards(new Set())
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Flashcards</h1>
-          <p className="text-muted-foreground">
-            Create and study with flashcards to improve your learning.
+      {/* Summary Card */}
+      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-blue-900">Topic Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-blue-800 leading-relaxed">
+            {data.summary}
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={startStudyMode} 
-            disabled={filteredFlashcards.length === 0}
-          >
-            <Play className="w-4 h-4 mr-2" />
-            Study ({filteredFlashcards.length})
-          </Button>
-          <Button onClick={() => setIsCreating(true)} disabled={isCreating}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Card
-          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Controls */}
+      <div className="flex justify-between items-center">
+        <Button onClick={resetAll} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reset All
+        </Button>
+        <div className="text-sm font-medium text-blue-700">
+          Click cards to reveal answers
         </div>
       </div>
-
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Search flashcards..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Create New Flashcard */}
-      {isCreating && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Flashcard</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Question</label>
-              <Textarea
-                placeholder="Enter your question..."
-                value={newFlashcard.question}
-                onChange={(e) => setNewFlashcard({ ...newFlashcard, question: e.target.value })}
-                className="min-h-[100px]"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Answer</label>
-              <Textarea
-                placeholder="Enter the answer..."
-                value={newFlashcard.answer}
-                onChange={(e) => setNewFlashcard({ ...newFlashcard, answer: e.target.value })}
-                className="min-h-[100px]"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={createFlashcard}
-                disabled={!newFlashcard.question.trim() || !newFlashcard.answer.trim() || isLoading}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isLoading ? "Saving..." : "Save Flashcard"}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsCreating(false)
-                  setNewFlashcard({ question: "", answer: "" })
-                }}
-              >
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Flashcards Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {filteredFlashcards.length === 0 ? (
-          <Card className="md:col-span-2">
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">
-                {searchTerm ? "No flashcards found matching your search." : "No flashcards yet. Create your first flashcard!"}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredFlashcards.map((card) => (
-            <FlashcardItem
-              key={card.id}
-              flashcard={card}
-              isEditing={editingId === card.id}
-              onEdit={() => setEditingId(card.id)}
-              onSave={(updatedCard) => updateFlashcard(card.id, updatedCard)}
-              onCancel={() => setEditingId(null)}
-              onDelete={() => deleteFlashcard(card.id)}
-              isLoading={isLoading}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function FlashcardItem({ flashcard, isEditing, onEdit, onSave, onCancel, onDelete, isLoading }) {
-  const [editQuestion, setEditQuestion] = useState(flashcard.question)
-  const [editAnswer, setEditAnswer] = useState(flashcard.answer)
-  const [flipped, setFlipped] = useState(false)
-
-  const handleSave = () => {
-    if (!editQuestion.trim() || !editAnswer.trim()) return
-    onSave({ question: editQuestion, answer: editAnswer })
-  }
-
-  const handleCancel = () => {
-    setEditQuestion(flashcard.question)
-    setEditAnswer(flashcard.answer)
-    onCancel()
-  }
-
-  if (isEditing) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Edit Flashcard</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Question</label>
-            <Textarea
-              value={editQuestion}
-              onChange={(e) => setEditQuestion(e.target.value)}
-              className="min-h-[80px]"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-2 block">Answer</label>
-            <Textarea
-              value={editAnswer}
-              onChange={(e) => setEditAnswer(e.target.value)}
-              className="min-h-[80px]"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleSave}
-              disabled={!editQuestion.trim() || !editAnswer.trim() || isLoading}
-              size="sm"
+      <div className="grid grid-cols-4 gap-4">
+        {data.questions.map((item, index) => (
+          <div key={index} className="relative h-56 perspective-1000">
+            <div 
+              className={`absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d cursor-pointer ${
+                flippedCards.has(index) ? 'rotate-y-180' : ''
+              }`}
+              onClick={() => flipCard(index)}
             >
-              <Save className="w-4 h-4 mr-2" />
-              {isLoading ? "Saving..." : "Save"}
-            </Button>
-            <Button variant="outline" onClick={handleCancel} size="sm">
-              <X className="w-4 h-4 mr-2" />
-              Cancel
-            </Button>
+              {/* Front Side - Question */}
+              <Card className="absolute inset-0 w-full h-full backface-hidden bg-gradient-to-br from-blue-500 to-blue-700 text-white border-blue-400 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardContent className="p-6 h-full flex flex-col justify-between">
+                  <div>
+                    <div className="text-xs text-blue-200 mb-3 font-medium">
+                      Question {index + 1}
+                    </div>
+                    <h3 className="text-sm font-semibold leading-tight text-white">
+                      {item.question}
+                    </h3>
+                  </div>
+                  <div className="text-xs text-blue-200 italic">
+                    Click to reveal answer
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Back Side - Answer */}
+              <Card className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 bg-gradient-to-br from-blue-600 to-blue-800 text-white border-blue-500 shadow-lg">
+                <CardContent className="p-6 h-full flex flex-col justify-center">
+                  <div className="text-center">
+                    <div className="text-xs text-blue-200 mb-4 font-medium">
+                      Answer
+                    </div>
+                    <div className="text-sm font-medium leading-relaxed text-blue-50 bg-blue-700/50 p-4 rounded-lg backdrop-blur-sm">
+                      {item.answer}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recommendations */}
+      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-blue-900">Recommended Resources</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {data.recommendations.map((rec, index) => (
+              <a
+                key={index}
+                href={rec.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group shadow-sm"
+              >
+                <span className="text-sm font-medium text-blue-800">{rec.topic}</span>
+                <ExternalLink className="w-4 h-4 text-blue-600 group-hover:text-blue-800 transition-colors" />
+              </a>
+            ))}
           </div>
         </CardContent>
       </Card>
-    )
-  }
 
-  return (
-    <Card className="cursor-pointer transition-transform hover:scale-105" onClick={() => setFlipped(!flipped)}>
-      <CardHeader>
-        <CardTitle className="flex justify-between items-start text-base">
-          <span className="text-sm text-muted-foreground">
-            {flipped ? "Answer" : "Question"}
-          </span>
-          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="sm" onClick={onEdit}>
-              <Edit2 className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onDelete}>
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm whitespace-pre-wrap min-h-[60px] flex items-center">
-          {flipped ? flashcard.answer : flashcard.question}
-        </p>
-        <div className="flex justify-between items-center mt-4">
-          <p className="text-xs text-muted-foreground">
-            Click to flip
-          </p>
-          <div className="flex gap-1">
-            <div className={`w-1.5 h-1.5 rounded-full ${flipped ? 'bg-muted' : 'bg-primary'}`} />
-            <div className={`w-1.5 h-1.5 rounded-full ${flipped ? 'bg-primary' : 'bg-muted'}`} />
-          </div>
-        </div>
-        {flashcard.createdAt && (
-          <p className="text-xs text-muted-foreground mt-2">
-            Created: {new Date(flashcard.createdAt).toLocaleDateString()}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      {/* Custom CSS for 3D flip animation */}
+      <style >{`
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+        .transform-style-preserve-3d {
+          transform-style: preserve-3d;
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
+      `}</style>
+    </div>
   )
 }
