@@ -36,8 +36,9 @@ const Login = () => {
           description: "Welcome back!",
         })
         // Store token in localStorage
-        localStorage.setItem("token", data.token)
-        navigate("/")
+        console.log(data)
+        localStorage.setItem("token", data.jwtToken)
+        navigate("/dashboard")
       } else {
         toast({
           title: "Login failed",
