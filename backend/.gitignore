@@ -1,10 +1,6 @@
 # Ignore node_modules and .env in backend
-/backend/node_modules/
-/backend/.env
-
-# Ignore node_modules and .env in frontend
-/frontend/node_modules/
-/frontend/.env
+node_modules/
+.env
 
 # (Optional) Ignore logs
 *.log
