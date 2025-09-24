@@ -53,7 +53,25 @@ const sendEmail = async (user, subject, message) => {
     }
 }
 
+const getUserIdFromToken = (token) => {
+    try {
+        if (!token) return null;
+
+        // Remove "Bearer " prefix if present
+        if (token.startsWith("Bearer ")) {
+            token = token.slice(7, token.length);
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        return decoded.id;
+    } catch (error) {
+        console.error("Invalid token:", error.message);
+        return null;
+    }
+};
+
 module.exports = {
     sendEmail,
-    generateReceiptPDF
+    generateReceiptPDF,
+    getUserIdFromToken
 }
